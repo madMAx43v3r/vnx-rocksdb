@@ -105,9 +105,12 @@ public:
 		}
 	}
 
-	void truncate()
-	{
+	void truncate() {
 		super_t::truncate();
+	}
+
+	void flush() {
+		super_t::flush();
 	}
 
 };

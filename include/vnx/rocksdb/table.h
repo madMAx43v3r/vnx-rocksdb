@@ -154,6 +154,12 @@ public:
 		}
 	}
 
+	void flush()
+	{
+		::rocksdb::FlushOptions options;
+		db->Flush(options);
+	}
+
 protected:
 	struct stream_t {
 		vnx::Memory memory;
