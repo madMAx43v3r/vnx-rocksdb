@@ -67,6 +67,11 @@ public:
 		return values.size();
 	}
 
+	bool erase(const K& key, const I& index)
+	{
+		return super_t::erase(std::pair<K, I>(key, index));
+	}
+
 };
 
 
