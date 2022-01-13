@@ -41,7 +41,7 @@ protected:
 			if(lhs < rhs) {
 				return -1;
 			}
-			if(lhs > rhs) {
+			if(rhs < lhs) {
 				return 1;
 			}
 			return 0;
@@ -84,6 +84,7 @@ public:
 		::rocksdb::Options options;
 		options.comparator = &comparator;
 		options.create_if_missing = true;
+		options.keep_log_file_num = 3;
 		options.OptimizeLevelStyleCompaction();
 
 		const auto status = ::rocksdb::DB::Open(options, file_path, &db);
