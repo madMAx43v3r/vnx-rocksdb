@@ -147,7 +147,7 @@ public:
 			::rocksdb::WriteOptions options;
 			const auto status = db->Delete(options, iter->key());
 			if(!status.ok()) {
-				throw std::runtime_error("DB::DeleteRange() failed with: " + status.ToString());
+				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
 			}
 			iter->Next();
 		}
