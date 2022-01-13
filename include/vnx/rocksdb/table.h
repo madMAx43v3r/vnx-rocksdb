@@ -120,6 +120,22 @@ public:
 		return true;
 	}
 
+	void truncate()
+	{
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		iter->SeekToFirst();
+		while(iter->Valid()) {
+			::rocksdb::WriteOptions options;
+			const auto status = db->Delete(options, iter->key());
+			if(!status.ok()) {
+				throw std::runtime_error("DB::DeleteRange() failed with: " + status.ToString());
+			}
+			iter->Next();
+		}
+	}
+
 protected:
 	struct stream_t {
 		vnx::Memory memory;
@@ -137,6 +153,11 @@ protected:
 		vnx::PointerInputStream stream(slice.data(), slice.size());
 		vnx::TypeInput in(&stream);
 		vnx::read(in, value, type_code, type_code ? nullptr : code.data());
+	}
+
+	void read(const ::rocksdb::Slice& slice, K& key) const
+	{
+		read(slice, key, key_stream.type_code, key_stream.code);
 	}
 
 	template<typename T>

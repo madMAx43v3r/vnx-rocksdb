@@ -36,9 +36,9 @@ public:
 		key_.second = 0;
 
 		if(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_stream.type_code, super_t::key_stream.code);
+			super_t::read(iter->key(), key_);
 			if(key_.first == key) {
-				if(key_.second++ == std::numeric_limits<I>::max()) {
+				if(++key_.second == std::numeric_limits<I>::max()) {
 					throw std::runtime_error("key space overflow");
 				}
 			}
@@ -56,7 +56,7 @@ public:
 
 		iter->Seek(super_t::write(super_t::key_stream, key_));
 		while(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_stream.type_code, super_t::key_stream.code);
+			super_t::read(iter->key(), key_);
 			if(key_.first != key) {
 				break;
 			}
@@ -70,6 +70,34 @@ public:
 	bool erase(const K& key, const I& index)
 	{
 		return super_t::erase(std::pair<K, I>(key, index));
+	}
+
+	void erase_all(const K& key)
+	{
+		const std::pair<K, I> begin(key, 0);
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
+
+		iter->Seek(super_t::write(super_t::key_stream, begin));
+		while(iter->Valid()) {
+			std::pair<K, I> key_;
+			super_t::read(iter->key(), key_);
+			if(key_.first != key) {
+				break;
+			}
+			::rocksdb::WriteOptions options;
+			const auto status = super_t::db->Delete(options, iter->key());
+			if(!status.ok()) {
+				throw std::runtime_error("DB::DeleteRange() failed with: " + status.ToString());
+			}
+			iter->Next();
+		}
+	}
+
+	void truncate()
+	{
+		super_t::truncate();
 	}
 
 };

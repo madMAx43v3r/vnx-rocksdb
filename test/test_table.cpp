@@ -48,6 +48,10 @@ int main(int argc, char** argv)
 	{
 		vnx::rocksdb::multi_table<uint64_t, std::string> table("test_multi_table");
 
+		table.truncate();
+		table.insert(1337, "test1");
+		table.insert(1337, "test2");
+		table.erase_all(1337);
 		table.insert(1337, "test1");
 		table.insert(1337, "test2");
 
