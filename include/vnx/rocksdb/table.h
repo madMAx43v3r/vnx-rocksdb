@@ -60,24 +60,41 @@ protected:
 	};
 
 public:
-	table(const std::string& file_path)
-	{
-		::rocksdb::Options options;
-		options.create_if_missing = true;
-		options.comparator = &comparator;
-		options.OptimizeLevelStyleCompaction();
-		const auto status = ::rocksdb::DB::Open(options, file_path, &db);
-		if(!status.ok()) {
-			throw std::runtime_error("DB::Open() failed with: " + status.ToString());
-		}
+	table() {
 		vnx::type<K>().create_dynamic_code(key_stream.code);
 		vnx::type<V>().create_dynamic_code(value_stream.code);
 		key_stream.type_code = vnx::type<K>().get_type_code();
 		value_stream.type_code = vnx::type<V>().get_type_code();
 	}
 
+	table(const std::string& file_path)
+		:	table()
+	{
+		open(file_path);
+	}
+
 	~table() {
+		close();
+	}
+
+	void open(const std::string& file_path)
+	{
+		close();
+
+		::rocksdb::Options options;
+		options.comparator = &comparator;
+		options.create_if_missing = true;
+		options.OptimizeLevelStyleCompaction();
+
+		const auto status = ::rocksdb::DB::Open(options, file_path, &db);
+		if(!status.ok()) {
+			throw std::runtime_error("DB::Open() failed with: " + status.ToString());
+		}
+	}
+
+	void close() {
 		delete db;
+		db = nullptr;
 	}
 
 	void insert(const K& key, const V& value)

@@ -20,9 +20,19 @@ private:
 	typedef table<std::pair<K, I>, V> super_t;
 
 public:
+	multi_table() = default;
+
 	multi_table(const std::string& file_path)
 		:	super_t(file_path)
 	{
+	}
+
+	void open(const std::string& file_path) {
+		super_t::open(file_path);
+	}
+
+	void close() {
+		super_t::close();
 	}
 
 	void insert(const K& key, const V& value)
