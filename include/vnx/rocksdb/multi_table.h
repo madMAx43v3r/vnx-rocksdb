@@ -36,7 +36,7 @@ public:
 		key_.second = 0;
 
 		if(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_stream.code.data());
+			super_t::read(iter->key(), key_, super_t::key_stream.type_code, super_t::key_stream.code);
 			if(key_.first == key) {
 				if(key_.second++ == std::numeric_limits<I>::max()) {
 					throw std::runtime_error("key space overflow");
@@ -56,12 +56,12 @@ public:
 
 		iter->Seek(super_t::write(super_t::key_stream, key_));
 		while(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_stream.code.data());
+			super_t::read(iter->key(), key_, super_t::key_stream.type_code, super_t::key_stream.code);
 			if(key_.first != key) {
 				break;
 			}
 			values.emplace_back();
-			super_t::read(iter->value(), values.back(), super_t::value_stream.code.data());
+			super_t::read(iter->value(), values.back(), super_t::value_stream.type_code, super_t::value_stream.code);
 			iter->Next();
 		}
 		return values.size();

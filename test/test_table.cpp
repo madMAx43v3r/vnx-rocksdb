@@ -9,6 +9,7 @@
 #include <vnx/rocksdb/multi_table.h>
 
 #include <vnx/vnx.h>
+#include <vnx/record_index_entry_t.hxx>
 
 
 int main(int argc, char** argv)
@@ -25,6 +26,19 @@ int main(int argc, char** argv)
 		table.erase(1338);
 
 		std::string value;
+		if(table.find(1337, value)) {
+			std::cout << "value = " << vnx::to_string(value) << std::endl;
+		} else {
+			std::cout << "value = NOT FOUND" << std::endl;
+		}
+	}
+	{
+		vnx::rocksdb::table<uint64_t, vnx::record_index_entry_t> table("test_struct_table");
+
+		vnx::record_index_entry_t value;
+		value.pos = 1337;
+		table.insert(1337, value);
+
 		if(table.find(1337, value)) {
 			std::cout << "value = " << vnx::to_string(value) << std::endl;
 		} else {

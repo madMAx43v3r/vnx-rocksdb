@@ -29,14 +29,15 @@ protected:
 	public:
 		Comparator() {
 			vnx::type<K>().create_dynamic_code(code);
+			type_code = vnx::type<K>().get_type_code();
 		}
 
 		int Compare(const ::rocksdb::Slice& a, const ::rocksdb::Slice& b) const override
 		{
 			K lhs;
 			K rhs;
-			read(a, lhs, code.data());
-			read(b, rhs, code.data());
+			read(a, lhs, type_code, code);
+			read(b, rhs, type_code, code);
 			if(lhs < rhs) {
 				return -1;
 			}
@@ -55,6 +56,7 @@ protected:
 
 	private:
 		std::vector<uint16_t> code;
+		const vnx::TypeCode* type_code = nullptr;
 	};
 
 public:
@@ -70,6 +72,8 @@ public:
 		}
 		vnx::type<K>().create_dynamic_code(key_stream.code);
 		vnx::type<V>().create_dynamic_code(value_stream.code);
+		key_stream.type_code = vnx::type<K>().get_type_code();
+		value_stream.type_code = vnx::type<V>().get_type_code();
 	}
 
 	~table() {
@@ -98,7 +102,7 @@ public:
 		if(!status.ok()) {
 			throw std::runtime_error("DB::Get() failed with: " + status.ToString());
 		}
-		read(pinned, value, value_stream.code.data());
+		read(pinned, value, value_stream.type_code, value_stream.code);
 		return true;
 	}
 
@@ -123,15 +127,16 @@ protected:
 		vnx::MemoryOutputStream stream;
 		vnx::TypeOutput out;
 		std::vector<uint16_t> code;
+		const vnx::TypeCode* type_code = nullptr;
 		stream_t() : stream(&memory), out(&stream) {}
 	};
 
 	template<typename T>
-	static void read(const ::rocksdb::Slice& slice, T& value, const uint16_t* code)
+	static void read(const ::rocksdb::Slice& slice, T& value, const vnx::TypeCode* type_code, const std::vector<uint16_t>& code)
 	{
 		vnx::PointerInputStream stream(slice.data(), slice.size());
 		vnx::TypeInput in(&stream);
-		vnx::read(in, value, nullptr, code);
+		vnx::read(in, value, type_code, type_code ? nullptr : code.data());
 	}
 
 	template<typename T>
@@ -140,7 +145,7 @@ protected:
 		stream.out.reset();
 		stream.memory.clear();
 
-		vnx::write(stream.out, value, nullptr, stream.code.data());
+		vnx::write(stream.out, value, stream.type_code, stream.type_code ? nullptr : stream.code.data());
 
 		if(stream.memory.get_size()) {
 			stream.out.flush();
