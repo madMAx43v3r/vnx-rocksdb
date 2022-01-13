@@ -46,7 +46,7 @@ public:
 		super_t::insert(key_, value);
 	}
 
-	bool find(const K& key, std::vector<V>& values) const
+	size_t find(const K& key, std::vector<V>& values) const
 	{
 		values.clear();
 		std::pair<K, I> key_(key, 0);
@@ -64,7 +64,7 @@ public:
 			super_t::read(iter->value(), values.back(), super_t::value_stream.code.data());
 			iter->Next();
 		}
-		return !values.empty();
+		return values.size();
 	}
 
 };
