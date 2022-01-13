@@ -172,11 +172,6 @@ protected:
 		vnx::read(in, value, type_code, type_code ? nullptr : code.data());
 	}
 
-	void read(const ::rocksdb::Slice& slice, K& key) const
-	{
-		read(slice, key, key_stream.type_code, key_stream.code);
-	}
-
 	template<typename T>
 	static ::rocksdb::Slice write(stream_t& stream, const T& value)
 	{
@@ -191,6 +186,10 @@ protected:
 			return ::rocksdb::Slice((const char*)stream.buffer.data(), stream.buffer.size());
 		}
 		return ::rocksdb::Slice((const char*)stream.out.get_buffer(), stream.out.get_buffer_pos());
+	}
+
+	void read(const ::rocksdb::Slice& slice, K& key) const {
+		read(slice, key, key_stream.type_code, key_stream.code);
 	}
 
 protected:
