@@ -22,6 +22,11 @@
 namespace vnx {
 namespace rocksdb {
 
+enum key_mode_e {
+	EQUAL,
+	GREATER_EQUAL
+};
+
 template<typename K, typename V>
 class table {
 protected:
@@ -67,25 +72,21 @@ public:
 		value_stream.type_code = vnx::type<V>().get_type_code();
 	}
 
-	table(const std::string& file_path)
+	table(const std::string& file_path, const ::rocksdb::Options& options = ::rocksdb::Options())
 		:	table()
 	{
-		open(file_path);
+		open(file_path, options);
 	}
 
 	~table() {
 		close();
 	}
 
-	void open(const std::string& file_path)
+	void open(const std::string& file_path, ::rocksdb::Options options = ::rocksdb::Options())
 	{
 		close();
-
-		::rocksdb::Options options;
 		options.comparator = &comparator;
 		options.create_if_missing = true;
-		options.keep_log_file_num = 3;
-		options.OptimizeLevelStyleCompaction();
 
 		const auto status = ::rocksdb::DB::Open(options, file_path, &db);
 		if(!status.ok()) {

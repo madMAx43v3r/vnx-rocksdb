@@ -22,13 +22,13 @@ private:
 public:
 	multi_table() = default;
 
-	multi_table(const std::string& file_path)
-		:	super_t(file_path)
+	multi_table(const std::string& file_path, const ::rocksdb::Options& options = ::rocksdb::Options())
+		:	super_t(file_path, options)
 	{
 	}
 
-	void open(const std::string& file_path) {
-		super_t::open(file_path);
+	void open(const std::string& file_path, const ::rocksdb::Options& options = ::rocksdb::Options()) {
+		super_t::open(file_path, options);
 	}
 
 	void close() {
@@ -56,7 +56,7 @@ public:
 		super_t::insert(key_, value);
 	}
 
-	size_t find(const K& key, std::vector<V>& values) const
+	size_t find(const K& key, std::vector<V>& values, const key_mode_e mode = EQUAL) const
 	{
 		values.clear();
 		std::pair<K, I> key_(key, 0);
@@ -67,7 +67,7 @@ public:
 		iter->Seek(super_t::write(super_t::key_stream, key_));
 		while(iter->Valid()) {
 			super_t::read(iter->key(), key_);
-			if(key_.first != key) {
+			if(mode == EQUAL && key_.first != key) {
 				break;
 			}
 			values.emplace_back();
@@ -82,7 +82,7 @@ public:
 		return super_t::erase(std::pair<K, I>(key, index));
 	}
 
-	void erase_all(const K& key)
+	void erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
 		const std::pair<K, I> begin(key, 0);
 
@@ -93,7 +93,7 @@ public:
 		while(iter->Valid()) {
 			std::pair<K, I> key_;
 			super_t::read(iter->key(), key_);
-			if(key_.first != key) {
+			if(mode == EQUAL && key_.first != key) {
 				break;
 			}
 			::rocksdb::WriteOptions options;
