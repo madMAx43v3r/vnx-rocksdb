@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 		table.erase(1338);
 
 		std::string value;
-		if(table.find(1337, value)) {
+		if(table.find(11337, value)) {
 			std::cout << "value = " << vnx::to_string(value) << std::endl;
 		} else {
 			std::cout << "value = NOT FOUND" << std::endl;
@@ -52,11 +52,19 @@ int main(int argc, char** argv)
 		table.insert(1337, "test1");
 		table.insert(1337, "test2");
 		table.erase_all(1337);
+		table.insert(1339, "test3");
+		table.insert(1339, "test4");
+		table.insert(1340, "test5");
 		table.insert(1337, "test1");
 		table.insert(1337, "test2");
 
 		std::vector<std::string> values;
 		if(table.find(1337, values)) {
+			std::cout << "values = " << vnx::to_string(values) << std::endl;
+		} else {
+			std::cout << "values = NOT FOUND" << std::endl;
+		}
+		if(table.find(1339, values, vnx::rocksdb::GREATER_EQUAL)) {
 			std::cout << "values = " << vnx::to_string(values) << std::endl;
 		} else {
 			std::cout << "values = NOT FOUND" << std::endl;

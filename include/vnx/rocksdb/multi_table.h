@@ -46,12 +46,14 @@ public:
 		key_.second = 0;
 
 		if(iter->Valid()) {
-			super_t::read(iter->key(), key_);
-			if(key_.first == key) {
-				if(++key_.second == std::numeric_limits<I>::max()) {
-					throw std::runtime_error("key space overflow");
-				}
+			std::pair<K, I> found;
+			super_t::read(iter->key(), found);
+			if(found.first == key) {
+				key_.second = found.second + 1;
 			}
+		}
+		if(key_.second == std::numeric_limits<I>::max()) {
+			throw std::runtime_error("key space overflow");
 		}
 		super_t::insert(key_, value);
 	}
