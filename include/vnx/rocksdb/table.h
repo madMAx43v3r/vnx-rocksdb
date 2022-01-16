@@ -30,6 +30,14 @@ enum key_mode_e {
 template<typename K, typename V>
 class table {
 protected:
+	struct stream_t {
+		vnx::Memory memory;
+		vnx::Buffer buffer;
+		vnx::MemoryOutputStream stream;
+		vnx::TypeOutput out;
+		stream_t() : stream(&memory), out(&stream) {}
+	};
+
 	class Comparator : public ::rocksdb::Comparator {
 	public:
 		Comparator() {
@@ -66,10 +74,10 @@ protected:
 
 public:
 	table() {
-		vnx::type<K>().create_dynamic_code(key_stream.code);
-		vnx::type<V>().create_dynamic_code(value_stream.code);
-		key_stream.type_code = vnx::type<K>().get_type_code();
-		value_stream.type_code = vnx::type<V>().get_type_code();
+		vnx::type<K>().create_dynamic_code(key_code);
+		vnx::type<V>().create_dynamic_code(value_code);
+		key_type = vnx::type<K>().get_type_code();
+		value_type = vnx::type<V>().get_type_code();
 	}
 
 	table(const std::string& file_path, const ::rocksdb::Options& options = ::rocksdb::Options())
@@ -94,15 +102,21 @@ public:
 		}
 	}
 
-	void close() {
+	void close()
+	{
 		delete db;
 		db = nullptr;
 	}
 
 	void insert(const K& key, const V& value)
 	{
+		stream_t key_stream;
+		stream_t value_stream;
+
 		::rocksdb::WriteOptions options;
-		const auto status = db->Put(options, write(key_stream, key), write(value_stream, value));
+		const auto status = db->Put(options,
+				write(key_stream, key, key_type, key_code),
+				write(value_stream, value, value_type, value_code));
 
 		if(!status.ok()) {
 			throw std::runtime_error("DB::Put() failed with: " + status.ToString());
@@ -111,9 +125,12 @@ public:
 
 	bool find(const K& key, V& value) const
 	{
+		stream_t key_stream;
+
 		::rocksdb::ReadOptions options;
 		::rocksdb::PinnableSlice pinned;
-		const auto status = db->Get(options, db->DefaultColumnFamily(), write(key_stream, key), &pinned);
+		const auto status = db->Get(
+				options, db->DefaultColumnFamily(), write(key_stream, key, key_type, key_code), &pinned);
 
 		if(status.IsNotFound()) {
 			return false;
@@ -121,14 +138,16 @@ public:
 		if(!status.ok()) {
 			throw std::runtime_error("DB::Get() failed with: " + status.ToString());
 		}
-		read(pinned, value, value_stream.type_code, value_stream.code);
+		read(pinned, value, value_type, value_code);
 		return true;
 	}
 
 	bool erase(const K& key)
 	{
+		stream_t key_stream;
+
 		::rocksdb::WriteOptions options;
-		const auto status = db->Delete(options, write(key_stream, key));
+		const auto status = db->Delete(options, write(key_stream, key, key_type, key_code));
 
 		if(status.IsNotFound()) {
 			return false;
@@ -162,16 +181,6 @@ public:
 	}
 
 protected:
-	struct stream_t {
-		vnx::Memory memory;
-		vnx::Buffer buffer;
-		vnx::MemoryOutputStream stream;
-		vnx::TypeOutput out;
-		std::vector<uint16_t> code;
-		const vnx::TypeCode* type_code = nullptr;
-		stream_t() : stream(&memory), out(&stream) {}
-	};
-
 	template<typename T>
 	static void read(const ::rocksdb::Slice& slice, T& value, const vnx::TypeCode* type_code, const std::vector<uint16_t>& code)
 	{
@@ -181,12 +190,12 @@ protected:
 	}
 
 	template<typename T>
-	static ::rocksdb::Slice write(stream_t& stream, const T& value)
+	static ::rocksdb::Slice write(stream_t& stream, const T& value, const vnx::TypeCode* type_code, const std::vector<uint16_t>& code)
 	{
 		stream.out.reset();
 		stream.memory.clear();
 
-		vnx::write(stream.out, value, stream.type_code, stream.type_code ? nullptr : stream.code.data());
+		vnx::write(stream.out, value, type_code, type_code ? nullptr : code.data());
 
 		if(stream.memory.get_size()) {
 			stream.out.flush();
@@ -196,15 +205,14 @@ protected:
 		return ::rocksdb::Slice((const char*)stream.out.get_buffer(), stream.out.get_buffer_pos());
 	}
 
-	void read(const ::rocksdb::Slice& slice, K& key) const {
-		read(slice, key, key_stream.type_code, key_stream.code);
-	}
-
 protected:
 	::rocksdb::DB* db = nullptr;
 
-	mutable stream_t key_stream;
-	stream_t value_stream;
+	std::vector<uint16_t> key_code;
+	std::vector<uint16_t> value_code;
+
+	const vnx::TypeCode* key_type = nullptr;
+	const vnx::TypeCode* value_type = nullptr;
 
 	Comparator comparator;
 

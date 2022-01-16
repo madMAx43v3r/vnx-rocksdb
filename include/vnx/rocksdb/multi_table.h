@@ -42,12 +42,13 @@ public:
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
 
-		iter->SeekForPrev(super_t::write(super_t::key_stream, key_));
+		typename super_t::stream_t key_stream;
+		iter->SeekForPrev(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
 		key_.second = 0;
 
 		if(iter->Valid()) {
 			std::pair<K, I> found;
-			super_t::read(iter->key(), found);
+			super_t::read(iter->key(), found, super_t::key_type, super_t::key_code);
 			if(found.first == key) {
 				key_.second = found.second + 1;
 			}
@@ -66,14 +67,15 @@ public:
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
 
-		iter->Seek(super_t::write(super_t::key_stream, key_));
+		typename super_t::stream_t key_stream;
+		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
 		while(iter->Valid()) {
-			super_t::read(iter->key(), key_);
+			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
 			if(mode == EQUAL && key_.first != key) {
 				break;
 			}
 			values.emplace_back();
-			super_t::read(iter->value(), values.back(), super_t::value_stream.type_code, super_t::value_stream.code);
+			super_t::read(iter->value(), values.back(), super_t::value_type, super_t::value_code);
 			iter->Next();
 		}
 		return values.size();
@@ -91,10 +93,11 @@ public:
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
 
-		iter->Seek(super_t::write(super_t::key_stream, begin));
+		typename super_t::stream_t key_stream;
+		iter->Seek(super_t::write(key_stream, begin, super_t::key_type, super_t::key_code));
 		while(iter->Valid()) {
 			std::pair<K, I> key_;
-			super_t::read(iter->key(), key_);
+			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
 			if(mode == EQUAL && key_.first != key) {
 				break;
 			}
