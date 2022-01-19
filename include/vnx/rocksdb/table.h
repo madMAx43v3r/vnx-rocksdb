@@ -17,6 +17,7 @@
 #include <rocksdb/db.h>
 #include <rocksdb/slice.h>
 #include <rocksdb/options.h>
+#include <rocksdb/comparator.h>
 
 
 namespace vnx {
