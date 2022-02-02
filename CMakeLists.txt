@@ -16,8 +16,6 @@ target_include_directories(vnx_rocksdb
 )
 target_link_libraries(vnx_rocksdb rocksdb z dl)
 
-target_compile_definitions(vnx_rocksdb PUBLIC ROCKSDB_LITE)
-
 add_executable(test_table test/test_table.cpp)
 target_link_libraries(test_table vnx_rocksdb vnx_base)
 
