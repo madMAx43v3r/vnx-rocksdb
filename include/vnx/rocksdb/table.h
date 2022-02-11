@@ -143,6 +143,22 @@ public:
 		return true;
 	}
 
+	void scan(const std::function<void(const K&, const V&)>& callback) const
+	{
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		iter->SeekToFirst();
+		while(iter->Valid()) {
+			K key = K();
+			V value = V();
+			read(iter->key(), key, key_type, key_code);
+			read(iter->value(), value, value_type, value_code);
+			callback(key, value);
+			iter->Next();
+		}
+	}
+
 	bool erase(const K& key)
 	{
 		stream_t key_stream;
