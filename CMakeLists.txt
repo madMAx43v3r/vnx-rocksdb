@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(vnx-rocksdb)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -Wno-unused-function")
 
 add_compile_options(-DNOGDI)
