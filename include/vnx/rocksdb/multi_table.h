@@ -105,6 +105,52 @@ public:
 		return values.size();
 	}
 
+	size_t find_range(const K& begin, const K& end, std::vector<V>& result) const
+	{
+		result.clear();
+		std::pair<K, I> key_(begin, 0);
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
+
+		typename super_t::stream_t key_stream;
+		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
+		while(iter->Valid()) {
+			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+			if(!(key_.first < end)) {
+				break;
+			}
+			result.emplace_back();
+			super_t::read(iter->value(), result.back(), super_t::value_type, super_t::value_code);
+			iter->Next();
+		}
+		return result.size();
+	}
+
+	size_t find_range(const K& begin, const K& end, std::vector<std::pair<K, V>>& result) const
+	{
+		result.clear();
+		std::pair<K, I> key_(begin, 0);
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
+
+		typename super_t::stream_t key_stream;
+		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
+		while(iter->Valid()) {
+			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+			if(!(key_.first < end)) {
+				break;
+			}
+			result.emplace_back();
+			auto& out = result.back();
+			out.first = key_.first;
+			super_t::read(iter->value(), out.second, super_t::value_type, super_t::value_code);
+			iter->Next();
+		}
+		return result.size();
+	}
+
 	bool erase(const K& key, const I& index)
 	{
 		return super_t::erase(std::pair<K, I>(key, index));
