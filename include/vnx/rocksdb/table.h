@@ -36,7 +36,9 @@ protected:
 		vnx::Buffer buffer;
 		vnx::MemoryOutputStream stream;
 		vnx::TypeOutput out;
-		stream_t() : stream(&memory), out(&stream) {}
+		stream_t() : stream(&memory), out(&stream) {
+			out.disable_type_codes = true;
+		}
 	};
 
 	class Comparator : public ::rocksdb::Comparator {
@@ -203,7 +205,11 @@ protected:
 	{
 		vnx::PointerInputStream stream(slice.data(), slice.size());
 		vnx::TypeInput in(&stream);
-		vnx::read(in, value, type_code, type_code ? nullptr : code.data());
+		try {
+			vnx::read(in, value, type_code, type_code ? nullptr : code.data());
+		} catch(...) {
+			value = T();
+		}
 	}
 
 	template<typename T>
