@@ -242,6 +242,8 @@ protected:
 };
 
 
+void sync_type_codes(const std::string& file_path);
+
 } // rocksdb
 } // vnx
 
