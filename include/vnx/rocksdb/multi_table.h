@@ -74,8 +74,13 @@ public:
 			if(mode == EQUAL && !(key_.first == key)) {
 				break;
 			}
-			values.emplace_back();
-			super_t::read(iter->value(), values.back(), super_t::value_type, super_t::value_code);
+			try {
+				V tmp = V();
+				super_t::read(iter->value(), tmp, super_t::value_type, super_t::value_code);
+				values.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
 			iter->Next();
 		}
 		return values.size();
@@ -98,16 +103,21 @@ public:
 			if(!(key_.first == key)) {
 				break;
 			}
-			values.emplace_back();
-			super_t::read(iter->value(), values.back(), super_t::value_type, super_t::value_code);
+			try {
+				V tmp = V();
+				super_t::read(iter->value(), tmp, super_t::value_type, super_t::value_code);
+				values.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
 			iter->Prev();
 		}
 		return values.size();
 	}
 
-	size_t find_range(const K& begin, const K& end, std::vector<V>& result) const
+	size_t find_range(const K& begin, const K& end, std::vector<V>& values) const
 	{
-		result.clear();
+		values.clear();
 		std::pair<K, I> key_(begin, 0);
 
 		::rocksdb::ReadOptions options;
@@ -120,11 +130,16 @@ public:
 			if(!(key_.first < end)) {
 				break;
 			}
-			result.emplace_back();
-			super_t::read(iter->value(), result.back(), super_t::value_type, super_t::value_code);
+			try {
+				V tmp = V();
+				super_t::read(iter->value(), tmp, super_t::value_type, super_t::value_code);
+				values.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
 			iter->Next();
 		}
-		return result.size();
+		return values.size();
 	}
 
 	size_t find_range(const K& begin, const K& end, std::vector<std::pair<K, V>>& result) const
@@ -142,10 +157,14 @@ public:
 			if(!(key_.first < end)) {
 				break;
 			}
-			result.emplace_back();
-			auto& out = result.back();
-			out.first = key_.first;
-			super_t::read(iter->value(), out.second, super_t::value_type, super_t::value_code);
+			try {
+				std::pair<K, V> tmp;
+				tmp.first = key_.first;
+				super_t::read(iter->value(), tmp.second, super_t::value_type, super_t::value_code);
+				result.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
 			iter->Next();
 		}
 		return result.size();

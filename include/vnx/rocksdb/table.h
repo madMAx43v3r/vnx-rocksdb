@@ -141,7 +141,11 @@ public:
 		if(!status.ok()) {
 			throw std::runtime_error("DB::Get() failed with: " + status.ToString());
 		}
-		read(pinned, value, value_type, value_code);
+		try {
+			read(pinned, value, value_type, value_code);
+		} catch(...) {
+			return false;
+		}
 		return true;
 	}
 
@@ -154,9 +158,13 @@ public:
 		while(iter->Valid()) {
 			K key = K();
 			V value = V();
-			read(iter->key(), key, key_type, key_code);
-			read(iter->value(), value, value_type, value_code);
-			callback(key, value);
+			try {
+				read(iter->key(), key, key_type, key_code);
+				read(iter->value(), value, value_type, value_code);
+				callback(key, value);
+			} catch(...) {
+				// ignore
+			}
 			iter->Next();
 		}
 	}
@@ -205,11 +213,7 @@ protected:
 	{
 		vnx::PointerInputStream stream(slice.data(), slice.size());
 		vnx::TypeInput in(&stream);
-		try {
-			vnx::read(in, value, type_code, type_code ? nullptr : code.data());
-		} catch(...) {
-			value = T();
-		}
+		vnx::read(in, value, type_code, type_code ? nullptr : code.data());
 	}
 
 	template<typename T>
