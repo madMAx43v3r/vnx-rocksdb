@@ -22,9 +22,11 @@ void sync_type_codes(const std::string& file_path)
 	table<Hash64, TypeCode> table(file_path, options);
 
 	table.scan([](const Hash64& code_hash, const TypeCode& type_code) {
-		auto copy = std::make_shared<TypeCode>(type_code);
-		copy->build();
-		vnx::register_type_code(copy->code_hash, copy);
+		if(type_code.type_hash) {
+			auto copy = std::make_shared<TypeCode>(type_code);
+			copy->build();
+			vnx::register_type_code(copy);
+		}
 	});
 
 	for(auto type_code : vnx::get_all_type_codes()) {
