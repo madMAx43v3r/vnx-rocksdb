@@ -36,8 +36,8 @@ protected:
 		vnx::Buffer buffer;
 		vnx::MemoryOutputStream stream;
 		vnx::TypeOutput out;
-		stream_t() : stream(&memory), out(&stream) {
-			out.disable_type_codes = true;
+		stream_t(bool disable_type_codes = true) : stream(&memory), out(&stream) {
+			out.disable_type_codes = disable_type_codes;
 		}
 	};
 
@@ -76,6 +76,8 @@ protected:
 	};
 
 public:
+	bool disable_type_codes = true;
+
 	table() {
 		vnx::type<K>().create_dynamic_code(key_code);
 		vnx::type<V>().create_dynamic_code(value_code);
@@ -113,8 +115,8 @@ public:
 
 	void insert(const K& key, const V& value)
 	{
-		stream_t key_stream;
-		stream_t value_stream;
+		stream_t key_stream(disable_type_codes);
+		stream_t value_stream(disable_type_codes);
 
 		::rocksdb::WriteOptions options;
 		const auto status = db->Put(options,
@@ -128,7 +130,7 @@ public:
 
 	bool find(const K& key, V& value) const
 	{
-		stream_t key_stream;
+		stream_t key_stream(disable_type_codes);
 
 		::rocksdb::ReadOptions options;
 		::rocksdb::PinnableSlice pinned;
@@ -171,7 +173,7 @@ public:
 
 	bool erase(const K& key)
 	{
-		stream_t key_stream;
+		stream_t key_stream(disable_type_codes);
 
 		::rocksdb::WriteOptions options;
 		const auto status = db->Delete(options, write(key_stream, key, key_type, key_code));
