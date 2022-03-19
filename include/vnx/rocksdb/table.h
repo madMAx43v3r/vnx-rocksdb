@@ -187,11 +187,12 @@ public:
 		return true;
 	}
 
-	void truncate()
+	size_t truncate()
 	{
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
 
+		size_t count = 0;
 		iter->SeekToFirst();
 		while(iter->Valid()) {
 			::rocksdb::WriteOptions options;
@@ -200,7 +201,9 @@ public:
 				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
 			}
 			iter->Next();
+			count++;
 		}
+		return count;
 	}
 
 	void flush()

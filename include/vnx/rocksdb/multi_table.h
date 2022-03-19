@@ -175,8 +175,9 @@ public:
 		return super_t::erase(std::pair<K, I>(key, index));
 	}
 
-	void erase_all(const K& key, const key_mode_e mode = EQUAL)
+	size_t erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
+		size_t count = 0;
 		const std::pair<K, I> begin(key, 0);
 
 		::rocksdb::ReadOptions options;
@@ -196,7 +197,9 @@ public:
 				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
 			}
 			iter->Next();
+			count++;
 		}
+		return count;
 	}
 
 	size_t erase_range(const K& begin, const K& end) const
@@ -220,12 +223,13 @@ public:
 				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
 			}
 			iter->Next();
+			count++;
 		}
 		return count;
 	}
 
-	void truncate() {
-		super_t::truncate();
+	size_t truncate() {
+		return super_t::truncate();
 	}
 
 	void flush() {
