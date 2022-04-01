@@ -177,6 +177,7 @@ public:
 
 	size_t erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
+		// TODO: use DeleteRange
 		size_t count = 0;
 		const std::pair<K, I> begin(key, 0);
 
@@ -204,6 +205,7 @@ public:
 
 	size_t erase_range(const K& begin, const K& end) const
 	{
+		// TODO: use DeleteRange
 		size_t count = 0;
 		std::pair<K, I> key_(begin, 0);
 
