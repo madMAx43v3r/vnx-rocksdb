@@ -128,6 +128,12 @@ public:
 		}
 	}
 
+	bool find(const K& key) const
+	{
+		V dummy;
+		return find(key, dummy);
+	}
+
 	bool find(const K& key, V& value) const
 	{
 		stream_t key_stream(disable_type_codes);
