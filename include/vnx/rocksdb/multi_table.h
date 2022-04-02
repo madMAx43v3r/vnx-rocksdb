@@ -177,7 +177,6 @@ public:
 
 	size_t erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
-		// TODO: use DeleteRange
 		size_t count = 0;
 		const std::pair<K, I> begin(key, 0);
 
@@ -205,29 +204,19 @@ public:
 
 	size_t erase_range(const K& begin, const K& end) const
 	{
-		// TODO: use DeleteRange
-		size_t count = 0;
-		std::pair<K, I> key_(begin, 0);
+		std::pair<K, I> begin_(begin, 0);
+		std::pair<K, I> end_(end, 0);
 
-		::rocksdb::ReadOptions options;
-		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
-
-		typename super_t::stream_t key_stream;
-		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
-		while(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
-			if(!(key_.first < end)) {
-				break;
-			}
-			::rocksdb::WriteOptions options;
-			const auto status = super_t::db->Delete(options, iter->key());
-			if(!status.ok()) {
-				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
-			}
-			iter->Next();
-			count++;
+		::rocksdb::WriteOptions options;
+		typename super_t::stream_t begin_stream;
+		typename super_t::stream_t end_stream;
+		const auto status = super_t::db->DeleteRange(options, super_t::db->DefaultColumnFamily(),
+				super_t::write(begin_stream, begin_, super_t::key_type, super_t::key_code),
+				super_t::write(end_stream, end_, super_t::key_type, super_t::key_code));
+		if(!status.ok()) {
+			throw std::runtime_error("DB::DeleteRange() failed with: " + status.ToString());
 		}
-		return count;
+		return 0;
 	}
 
 	size_t truncate() {
