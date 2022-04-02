@@ -19,6 +19,8 @@
 #include <rocksdb/options.h>
 #include <rocksdb/comparator.h>
 
+#include <limits>
+
 
 namespace vnx {
 namespace rocksdb {

@@ -177,57 +177,66 @@ public:
 
 	size_t erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
-		// TODO: use DeleteRange
-		size_t count = 0;
-		const std::pair<K, I> begin(key, 0);
+		std::vector<std::pair<K, I>> keys;
+		{
+			::rocksdb::ReadOptions options;
+			std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
 
-		::rocksdb::ReadOptions options;
-		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
-
-		typename super_t::stream_t key_stream;
-		iter->Seek(super_t::write(key_stream, begin, super_t::key_type, super_t::key_code));
-		while(iter->Valid()) {
-			std::pair<K, I> key_;
-			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
-			if(mode == EQUAL && !(key_.first == key)) {
-				break;
+			typename super_t::stream_t key_stream;
+			iter->Seek(super_t::write(key_stream, std::pair<K, I>(key, 0), super_t::key_type, super_t::key_code));
+			while(iter->Valid()) {
+				std::pair<K, I> key_;
+				super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+				if(mode == EQUAL && !(key_.first == key)) {
+					break;
+				}
+				keys.push_back(key_);
+				iter->Next();
 			}
-			::rocksdb::WriteOptions options;
-			const auto status = super_t::db->Delete(options, iter->key());
-			if(!status.ok()) {
-				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
-			}
-			iter->Next();
-			count++;
 		}
-		return count;
+		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
+			throw std::logic_error("keys.size() > INT_MAX");
+		}
+#pragma omp parallel for
+		for(int i = 0; i < int(keys.size()); ++i)
+		{
+			::rocksdb::WriteOptions options;
+			typename super_t::stream_t key_stream;
+			super_t::db->Delete(options, super_t::write(key_stream, keys[i], super_t::key_type, super_t::key_code));
+		}
+		return keys.size();
 	}
 
 	size_t erase_range(const K& begin, const K& end) const
 	{
-		// TODO: use DeleteRange
-		size_t count = 0;
-		std::pair<K, I> key_(begin, 0);
+		std::vector<std::pair<K, I>> keys;
+		{
+			::rocksdb::ReadOptions options;
+			std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
 
-		::rocksdb::ReadOptions options;
-		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
-
-		typename super_t::stream_t key_stream;
-		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
-		while(iter->Valid()) {
-			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
-			if(!(key_.first < end)) {
-				break;
+			typename super_t::stream_t key_stream;
+			iter->Seek(super_t::write(key_stream, std::pair<K, I>(begin, 0), super_t::key_type, super_t::key_code));
+			while(iter->Valid()) {
+				std::pair<K, I> key_;
+				super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+				if(!(key_.first < end)) {
+					break;
+				}
+				keys.push_back(key_);
+				iter->Next();
 			}
-			::rocksdb::WriteOptions options;
-			const auto status = super_t::db->Delete(options, iter->key());
-			if(!status.ok()) {
-				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
-			}
-			iter->Next();
-			count++;
 		}
-		return count;
+		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
+			throw std::logic_error("keys.size() > INT_MAX");
+		}
+#pragma omp parallel for
+		for(int i = 0; i < int(keys.size()); ++i)
+		{
+			::rocksdb::WriteOptions options;
+			typename super_t::stream_t key_stream;
+			super_t::db->Delete(options, super_t::write(key_stream, keys[i], super_t::key_type, super_t::key_code));
+		}
+		return keys.size();
 	}
 
 	size_t truncate() {
