@@ -10,6 +10,8 @@
 
 #include <vnx/rocksdb/table.h>
 
+#include <mutex>
+
 
 namespace vnx {
 namespace rocksdb {
@@ -37,10 +39,17 @@ public:
 
 	void insert(const K& key, const V& value)
 	{
+		insert_many(key, {value});
+	}
+
+	void insert_many(const K& key, const std::vector<V>& values)
+	{
 		std::pair<K, I> key_(key, std::numeric_limits<I>::max());
 
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
+
+		std::lock_guard<std::mutex> lock(mutex);
 
 		typename super_t::stream_t key_stream;
 		iter->SeekForPrev(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
@@ -53,10 +62,13 @@ public:
 				key_.second = found.second + 1;
 			}
 		}
-		if(key_.second == std::numeric_limits<I>::max()) {
-			throw std::runtime_error("key space overflow");
+		for(const auto& value : values) {
+			if(key_.second == std::numeric_limits<I>::max()) {
+				throw std::runtime_error("key space overflow");
+			}
+			super_t::insert(key_, value);
+			key_.second++;
 		}
-		super_t::insert(key_, value);
 	}
 
 	size_t find(const K& key, std::vector<V>& values, const key_mode_e mode = EQUAL) const
@@ -246,6 +258,9 @@ public:
 	void flush() {
 		super_t::flush();
 	}
+
+private:
+	std::mutex mutex;
 
 };
 
