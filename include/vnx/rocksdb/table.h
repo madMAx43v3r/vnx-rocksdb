@@ -195,6 +195,21 @@ public:
 		return true;
 	}
 
+	size_t erase_many(const std::vector<K>& keys)
+	{
+		size_t count = 0;
+		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
+			throw std::logic_error("keys.size() > INT_MAX");
+		}
+#pragma omp parallel for
+		for(int i = 0; i < int(keys.size()); ++i) {
+			if(erase(keys[i])) {
+				count++;
+			}
+		}
+		return count;
+	}
+
 	size_t truncate()
 	{
 		::rocksdb::ReadOptions options;

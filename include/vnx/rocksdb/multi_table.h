@@ -187,6 +187,37 @@ public:
 		return super_t::erase(std::pair<K, I>(key, index));
 	}
 
+	size_t erase_match(const K& key, const V& value) const
+	{
+		size_t count = 0;
+		std::pair<K, I> key_(key, 0);
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(super_t::db->NewIterator(options));
+
+		typename super_t::stream_t key_stream;
+		iter->Seek(super_t::write(key_stream, key_, super_t::key_type, super_t::key_code));
+		while(iter->Valid()) {
+			super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+			if(!(key_.first == key)) {
+				break;
+			}
+			try {
+				V tmp = V();
+				super_t::read(iter->value(), tmp, super_t::value_type, super_t::value_code);
+				if(tmp == value) {
+					::rocksdb::WriteOptions options;
+					super_t::db->Delete(options, iter->key());
+					count++;
+				}
+			} catch(...) {
+				// ignore
+			}
+			iter->Next();
+		}
+		return count;
+	}
+
 	size_t erase_all(const K& key, const key_mode_e mode = EQUAL)
 	{
 		std::vector<std::pair<K, I>> keys;
