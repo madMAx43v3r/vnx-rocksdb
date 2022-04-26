@@ -159,6 +159,58 @@ public:
 		return true;
 	}
 
+	bool find_first(V& value) const
+	{
+		V dummy;
+		return find_first(dummy, value);
+	}
+
+	bool find_first(K& key, V& value) const
+	{
+		key = K();
+		value = V();
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		iter->SeekToFirst();
+		if(iter->Valid()) {
+			try {
+				read(iter->key(), key, key_type, key_code);
+				read(iter->value(), value, value_type, value_code);
+			} catch(...) {
+				// ignore
+			}
+			return true;
+		}
+		return false;
+	}
+
+	bool find_last(V& value) const
+	{
+		V dummy;
+		return find_last(dummy, value);
+	}
+
+	bool find_last(K& key, V& value) const
+	{
+		key = K();
+		value = V();
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		iter->SeekToLast();
+		if(iter->Valid()) {
+			try {
+				read(iter->key(), key, key_type, key_code);
+				read(iter->value(), value, value_type, value_code);
+			} catch(...) {
+				// ignore
+			}
+			return true;
+		}
+		return false;
+	}
+
 	void scan(const std::function<void(const K&, const V&)>& callback) const
 	{
 		::rocksdb::ReadOptions options;
