@@ -223,10 +223,10 @@ public:
 			try {
 				read(iter->key(), key, key_type, key_code);
 				read(iter->value(), value, value_type, value_code);
-				callback(key, value);
 			} catch(...) {
 				// ignore
 			}
+			callback(key, value);
 			iter->Next();
 		}
 	}
