@@ -100,7 +100,7 @@ public:
 	void open(const std::string& file_path, ::rocksdb::Options options = ::rocksdb::Options())
 	{
 		close();
-//		options.comparator = &comparator;
+		options.comparator = &comparator;
 		options.create_if_missing = true;
 
 		const auto status = ::rocksdb::DB::Open(options, file_path, &db);
