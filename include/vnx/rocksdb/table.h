@@ -211,6 +211,28 @@ public:
 		return false;
 	}
 
+	size_t find_greater_equal(const K& key, std::vector<V>& values) const
+	{
+		values.clear();
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		stream_t key_stream;
+		iter->Seek(write(key_stream, key, key_type, key_code));
+		while(iter->Valid()) {
+			try {
+				V tmp = V();
+				read(iter->value(), tmp, value_type, value_code);
+				values.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
+			iter->Next();
+		}
+		return values.size();
+	}
+
 	void scan(const std::function<void(const K&, const V&)>& callback) const
 	{
 		::rocksdb::ReadOptions options;
@@ -264,6 +286,39 @@ public:
 			}
 		}
 		return count;
+	}
+
+	size_t erase_greater_equal(const K& key)
+	{
+		std::vector<K> keys;
+		{
+			::rocksdb::ReadOptions options;
+			std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+			stream_t key_stream;
+			iter->Seek(write(key_stream, key, key_type, key_code));
+			while(iter->Valid()) {
+				try {
+					K key_ = K();
+					read(iter->key(), key_, key_type, key_code);
+					keys.push_back(key_);
+				} catch(...) {
+					// ignore
+				}
+				iter->Next();
+			}
+		}
+		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
+			throw std::logic_error("keys.size() > INT_MAX");
+		}
+#pragma omp parallel for
+		for(int i = 0; i < int(keys.size()); ++i)
+		{
+			::rocksdb::WriteOptions options;
+			stream_t key_stream;
+			db->Delete(options, write(key_stream, keys[i], key_type, key_code));
+		}
+		return keys.size();
 	}
 
 	size_t truncate()
