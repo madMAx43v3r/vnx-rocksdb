@@ -255,8 +255,12 @@ public:
 		}
 #pragma omp parallel for
 		for(int i = 0; i < int(keys.size()); ++i) {
-			if(erase(keys[i])) {
-				count++;
+			try {
+				if(erase(keys[i])) {
+					count++;
+				}
+			} catch(...) {
+				// ignore
 			}
 		}
 		return count;

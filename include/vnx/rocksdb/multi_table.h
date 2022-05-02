@@ -228,12 +228,16 @@ public:
 			typename super_t::stream_t key_stream;
 			iter->Seek(super_t::write(key_stream, std::pair<K, I>(key, 0), super_t::key_type, super_t::key_code));
 			while(iter->Valid()) {
-				std::pair<K, I> key_;
-				super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
-				if(mode == EQUAL && !(key_.first == key)) {
-					break;
+				try {
+					std::pair<K, I> key_;
+					super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+					if(mode == EQUAL && !(key_.first == key)) {
+						break;
+					}
+					keys.push_back(key_);
+				} catch(...) {
+					// ignore
 				}
-				keys.push_back(key_);
 				iter->Next();
 			}
 		}
@@ -260,12 +264,16 @@ public:
 			typename super_t::stream_t key_stream;
 			iter->Seek(super_t::write(key_stream, std::pair<K, I>(begin, 0), super_t::key_type, super_t::key_code));
 			while(iter->Valid()) {
-				std::pair<K, I> key_;
-				super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
-				if(!(key_.first < end)) {
-					break;
+				try {
+					std::pair<K, I> key_;
+					super_t::read(iter->key(), key_, super_t::key_type, super_t::key_code);
+					if(!(key_.first < end)) {
+						break;
+					}
+					keys.push_back(key_);
+				} catch(...) {
+					// ignore
 				}
-				keys.push_back(key_);
 				iter->Next();
 			}
 		}
