@@ -82,17 +82,17 @@ public:
 		return true;
 	}
 
-	bool find_prev(const raw_data_t& key, raw_ptr_t& value, const size_t match = 0) const
+	bool find_prev(const raw_data_t& key, raw_ptr_t& value, raw_ptr_t* found_key = nullptr) const
 	{
 		::rocksdb::ReadOptions options;
 		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
 
 		iter->SeekForPrev(to_slice(key));
-		if(iter->Valid()
-			&& iter->key().size() >= match && key.second >= match
-			&& ::memcmp(iter->key().data(), key.first, match) == 0)
-		{
+		if(iter->Valid()) {
 			value.PinSelf(iter->value());
+			if(found_key) {
+				found_key->PinSelf(iter->key());
+			}
 			return true;
 		}
 		return false;
