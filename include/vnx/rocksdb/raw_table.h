@@ -88,8 +88,9 @@ public:
 		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
 
 		iter->SeekForPrev(to_slice(key));
-		if(iter->Valid() && iter->key().size() == key.second
-			&& ::memcmp(iter->key().data(), key.first, std::min(match, key.second)) == 0)
+		if(iter->Valid()
+			&& iter->key().size() >= match && key.second >= match
+			&& ::memcmp(iter->key().data(), key.first, match) == 0)
 		{
 			value.PinSelf(iter->value());
 			return true;
