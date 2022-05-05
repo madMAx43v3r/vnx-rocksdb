@@ -233,6 +233,29 @@ public:
 		return values.size();
 	}
 
+	size_t find_greater_equal(const K& key, std::vector<std::pair<K, V>>& values) const
+	{
+		values.clear();
+
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+
+		stream_t key_stream;
+		iter->Seek(write(key_stream, key, key_type, key_code));
+		while(iter->Valid()) {
+			try {
+				std::pair<K, V> tmp;
+				read(iter->key(), tmp.first, key_type, key_code);
+				read(iter->value(), tmp.second, value_type, value_code);
+				values.push_back(std::move(tmp));
+			} catch(...) {
+				// ignore
+			}
+			iter->Next();
+		}
+		return values.size();
+	}
+
 	void scan(const std::function<void(const K&, const V&)>& callback) const
 	{
 		::rocksdb::ReadOptions options;
