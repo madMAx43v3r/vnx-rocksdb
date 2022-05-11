@@ -13,6 +13,7 @@
 #include <rocksdb/options.h>
 
 #include <limits>
+#include <atomic>
 
 
 namespace vnx {
@@ -114,7 +115,7 @@ public:
 
 	size_t erase_many(const std::vector<raw_data_t>& keys)
 	{
-		size_t count = 0;
+		std::atomic<size_t> count {0};
 		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
 			throw std::logic_error("keys.size() > INT_MAX");
 		}

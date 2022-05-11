@@ -20,6 +20,7 @@
 #include <rocksdb/comparator.h>
 
 #include <limits>
+#include <atomic>
 
 
 namespace vnx {
@@ -178,10 +179,10 @@ public:
 			try {
 				read(iter->key(), key, key_type, key_code);
 				read(iter->value(), value, value_type, value_code);
+				return true;
 			} catch(...) {
 				// ignore
 			}
-			return true;
 		}
 		return false;
 	}
@@ -266,13 +267,17 @@ public:
 		while(iter->Valid()) {
 			K key = K();
 			V value = V();
+			bool valid = false;
 			try {
 				read(iter->key(), key, key_type, key_code);
 				read(iter->value(), value, value_type, value_code);
+				valid = true;
 			} catch(...) {
 				// ignore
 			}
-			callback(key, value);
+			if(valid) {
+				callback(key, value);
+			}
 			iter->Next();
 		}
 	}
@@ -295,7 +300,7 @@ public:
 
 	size_t erase_many(const std::vector<K>& keys)
 	{
-		size_t count = 0;
+		std::atomic<size_t> count {0};
 		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
 			throw std::logic_error("keys.size() > INT_MAX");
 		}
@@ -338,10 +343,7 @@ public:
 		iter->SeekToFirst();
 		while(iter->Valid()) {
 			::rocksdb::WriteOptions options;
-			const auto status = db->Delete(options, iter->key());
-			if(!status.ok()) {
-				throw std::runtime_error("DB::Delete() failed with: " + status.ToString());
-			}
+			db->Delete(options, iter->key());
 			iter->Next();
 			count++;
 		}
@@ -351,7 +353,10 @@ public:
 	void flush()
 	{
 		::rocksdb::FlushOptions options;
-		db->Flush(options);
+		const auto status = db->Flush(options);
+		if(!status.ok()) {
+			throw std::runtime_error("DB::Flush() failed with: " + status.ToString());
+		}
 	}
 
 protected:
