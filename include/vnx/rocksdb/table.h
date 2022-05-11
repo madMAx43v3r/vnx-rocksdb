@@ -153,10 +153,11 @@ public:
 		}
 		try {
 			read(pinned, value, value_type, value_code);
+			return true;
 		} catch(...) {
-			return false;
+			// ignore
 		}
-		return true;
+		return false;
 	}
 
 	bool find_first(V& value) const
@@ -313,35 +314,19 @@ public:
 
 	size_t erase_greater_equal(const K& key)
 	{
-		std::vector<K> keys;
-		{
-			::rocksdb::ReadOptions options;
-			std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
+		::rocksdb::ReadOptions options;
+		std::unique_ptr<::rocksdb::Iterator> iter(db->NewIterator(options));
 
-			stream_t key_stream;
-			iter->Seek(write(key_stream, key, key_type, key_code));
-			while(iter->Valid()) {
-				try {
-					K key_ = K();
-					read(iter->key(), key_, key_type, key_code);
-					keys.push_back(key_);
-				} catch(...) {
-					// ignore
-				}
-				iter->Next();
-			}
-		}
-		if(keys.size() > size_t(std::numeric_limits<int>::max())) {
-			throw std::logic_error("keys.size() > INT_MAX");
-		}
-#pragma omp parallel for
-		for(int i = 0; i < int(keys.size()); ++i)
-		{
+		size_t count = 0;
+		stream_t key_stream;
+		iter->Seek(write(key_stream, key, key_type, key_code));
+		while(iter->Valid()) {
 			::rocksdb::WriteOptions options;
-			stream_t key_stream;
-			db->Delete(options, write(key_stream, keys[i], key_type, key_code));
+			db->Delete(options, iter->key());
+			iter->Next();
+			count++;
 		}
-		return keys.size();
+		return count;
 	}
 
 	size_t truncate()
