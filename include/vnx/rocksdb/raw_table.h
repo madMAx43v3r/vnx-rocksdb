@@ -99,6 +99,12 @@ public:
 		return false;
 	}
 
+	::rocksdb::Iterator* iterator() const
+	{
+		::rocksdb::ReadOptions options;
+		return db->NewIterator(options);
+	}
+
 	bool erase(const raw_data_t& key)
 	{
 		::rocksdb::WriteOptions options;
