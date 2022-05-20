@@ -182,6 +182,13 @@ public:
 		return result.size();
 	}
 
+	void scan(const std::function<void(const K&, const V&)>& callback) const
+	{
+		super_t::scan([callback](const std::pair<K, I>& key, const V& value) {
+			callback(key.first, value);
+		});
+	}
+
 	bool erase(const K& key, const I& index)
 	{
 		return super_t::erase(std::pair<K, I>(key, index));
