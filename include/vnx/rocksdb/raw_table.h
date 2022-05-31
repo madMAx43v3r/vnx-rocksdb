@@ -138,6 +138,12 @@ public:
 		return count;
 	}
 
+	void compact()
+	{
+		::rocksdb::CompactRangeOptions options;
+		db->CompactRange(options, nullptr, nullptr);
+	}
+
 protected:
 	static ::rocksdb::Slice to_slice(const raw_data_t& data)
 	{
