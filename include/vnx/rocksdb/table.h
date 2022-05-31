@@ -350,6 +350,11 @@ public:
 		return count;
 	}
 
+	void compact()
+	{
+		db->CompactRange(nullptr, nullptr);
+	}
+
 	void flush()
 	{
 		::rocksdb::FlushOptions options;

@@ -281,6 +281,10 @@ public:
 		return super_t::truncate();
 	}
 
+	void compact() {
+		super_t::compact();
+	}
+
 	void flush() {
 		super_t::flush();
 	}
