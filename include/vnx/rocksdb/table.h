@@ -352,7 +352,8 @@ public:
 
 	void compact()
 	{
-		db->CompactRange(nullptr, nullptr);
+		::rocksdb::CompactRangeOptions options;
+		db->CompactRange(options, nullptr, nullptr);
 	}
 
 	void flush()
