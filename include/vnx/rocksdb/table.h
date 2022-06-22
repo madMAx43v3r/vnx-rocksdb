@@ -163,7 +163,7 @@ public:
 
 	bool find_first(V& value) const
 	{
-		V dummy;
+		K dummy;
 		return find_first(dummy, value);
 	}
 
@@ -189,7 +189,7 @@ public:
 
 	bool find_last(V& value) const
 	{
-		V dummy;
+		K dummy;
 		return find_last(dummy, value);
 	}
 
