@@ -15,6 +15,7 @@ endif()
 add_compile_definitions(NOGDI NOMINMAX)
 
 find_package(ZLIB REQUIRED)
+find_package(RocksDB CONFIG REQUIRED)
 
 add_library(vnx_rocksdb SHARED
 	src/table.cpp
@@ -22,15 +23,9 @@ add_library(vnx_rocksdb SHARED
 
 target_include_directories(vnx_rocksdb PUBLIC include)
 
-target_link_libraries(vnx_rocksdb vnx_base rocksdb ZLIB::ZLIB)
+target_link_libraries(vnx_rocksdb vnx_base RocksDB::rocksdb ZLIB::ZLIB)
 
 if(MSVC)
-	find_library(RocksDB_LIBRARY rocksdb HINTS ${RocksDB_LIBRARIES})
-	add_library(rocksdb INTERFACE IMPORTED)
-	set_target_properties(rocksdb PROPERTIES INTERFACE_LINK_LIBRARIES "${RocksDB_LIBRARY}")
-
-	target_include_directories(vnx_rocksdb PRIVATE ${RocksDB_INCLUDE_DIR})
-
 	target_link_libraries(vnx_rocksdb Rpcrt4 shlwapi)
 else()
 	target_link_libraries(vnx_rocksdb dl OpenMP::OpenMP_CXX)
